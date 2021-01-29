@@ -16,9 +16,6 @@
     "environment": [
       { "name": "DATABASE_HOST", "value": "${database_host}" },
       { "name": "AWS_REGION", "value": "${aws_region}" }
-
-
-
     ],
     "logConfiguration": {
       "logDriver": "gelf",

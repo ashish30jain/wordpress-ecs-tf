@@ -1,0 +1,1 @@
+database_master_password="SolidR0cksAtSh0re#1"

@@ -131,7 +131,6 @@ fi
     -var "workspace=${TERRAFORM_ENV}" \
     -var "project=${TERRAFORM_PROJECT}" \
     -var "aws_region=${REGION}" \
-    -var "database_host=${DB_HOST}" \
     -auto-approve \
     -lock=true
 

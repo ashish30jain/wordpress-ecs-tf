@@ -4,7 +4,7 @@ module "ecs_fargate" {
   container_name   = local.container_name
   container_port   = local.container_port
   cluster          = aws_ecs_cluster.demo.arn
-  subnets          = module.vpc.public_subnet_ids
+  subnets          = data.terraform_remote_state.vpc.outptus.private_subnet_ids
   target_group_arn = module.alb.alb_target_group_arn
   vpc_id           = module.vpc.vpc_id
 
@@ -14,10 +14,10 @@ module "ecs_fargate" {
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 100
   deployment_controller_type         = "ECS"
-  assign_public_ip                   = true
+  assign_public_ip                   = false
   health_check_grace_period_seconds  = 10
   platform_version                   = "LATEST"
-  source_cidr_blocks                 = ["0.0.0.0/0"]
+  source_cidr_blocks                 = data.terraform_remote_state.vpc.outputs.private_subnet_cidr_blocks
   cpu                                = 256
   memory                             = local.container_memory
   requires_compatibilities           = ["FARGATE"]
@@ -40,7 +40,7 @@ data "template_file" "task_definition" {
     container_image              = "${var.container_image}:${var.container_version}"
     container_port               = var.container_port
     aws_region                   = var.aws_region
-    database_host                = var.database_host
+    database_host                = data.terraform_remote_state.rds.outputs.mysql_address
   }
 }
 
@@ -70,6 +70,10 @@ resource "aws_iam_role_policy_attachment" "default" {
   policy_arn = aws_iam_policy.default.arn
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_default" {
+  role       = aws_iam_role.default.name
+  policy_arn = aws_iam_policy.policy.arn
+}
 data "aws_iam_policy" "ecs_task_execution" {
   arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
@@ -84,9 +88,10 @@ module "alb" {
   vpc_id                     = module.vpc.vpc_id
   subnets                    = module.vpc.public_subnet_ids
   access_logs_bucket         = module.s3_lb_log.s3_bucket_id
-  enable_https_listener      = false
-  enable_http_listener       = true
+  enable_https_listener      = true
+  enable_http_listener       = false
   enable_deletion_protection = false
+  certificates = aws_acm_certificate.cert.arn
 }
 
 module "s3_lb_log" {
@@ -102,17 +107,6 @@ module "s3_access_log" {
   force_destroy = true
 }
 
-module "vpc" {
-  source                    = "git::https://github.com/tmknom/terraform-aws-vpc.git?ref=tags/2.0.1"
-  cidr_block                = local.cidr_block
-  name                      = "ecs-fargate"
-  public_subnet_cidr_blocks = [cidrsubnet(local.cidr_block, 8, 0), cidrsubnet(local.cidr_block, 8, 1)]
-  public_availability_zones = data.aws_availability_zones.available.names
-}
-
-locals {
-  cidr_block = "10.255.0.0/16"
-}
 
 data "aws_caller_identity" "current" {}
 
