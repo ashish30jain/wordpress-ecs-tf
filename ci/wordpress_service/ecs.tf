@@ -6,7 +6,7 @@ module "ecs_fargate" {
   cluster          = aws_ecs_cluster.demo.arn
   subnets          = data.terraform_remote_state.vpc.outptus.private_subnet_ids
   target_group_arn = module.alb.alb_target_group_arn
-  vpc_id           = module.vpc.vpc_id
+  vpc_id           = data.terraform_remote_state.vpc.outptus.vpc_id
 
   container_definitions = data.template_file.task_definition.rendered
 
@@ -85,8 +85,8 @@ resource "aws_ecs_cluster" "demo" {
 module "alb" {
   source                     = "git::https://github.com/tmknom/terraform-aws-alb.git?ref=tags/2.1.0"
   name                       = "ecs-fargate"
-  vpc_id                     = module.vpc.vpc_id
-  subnets                    = module.vpc.public_subnet_ids
+  vpc_id                     = data.terraform_remote_state.vpc.outptus.vpc_id
+  subnets                    = data.terraform_remote_state.vpc.outptus.private_subnet_ids
   access_logs_bucket         = module.s3_lb_log.s3_bucket_id
   enable_https_listener      = true
   enable_http_listener       = false

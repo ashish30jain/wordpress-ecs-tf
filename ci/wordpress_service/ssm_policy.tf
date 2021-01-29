@@ -1,6 +1,5 @@
 resource "aws_iam_policy" "policy" {
-  for_each = data.aws_iam_policy_document.s3_policy
-  name  = "${var.workspace}ssmpolicy"
+  name  = "${var.workspace}-ssm_policy"
   policy = data.aws_iam_policy_document.ssm_policy.json
 }
 
